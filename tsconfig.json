@@ -1,0 +1,19 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compileOnSave": false,
+  "files": [],
+  "references": [
+    {
+      "path": "./apps/my-nx-monorepo-e2e"
+    },
+    {
+      "path": "./apps/my-nx-monorepo"
+    },
+    {
+      "path": "./web-e2e"
+    },
+    {
+      "path": "./web"
+    }
+  ]
+}
