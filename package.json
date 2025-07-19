@@ -1,8 +1,12 @@
 {
-  "name": "@test-mono-repo/source",
+  "name": "@web-app/source",
   "version": "0.0.0",
   "license": "MIT",
-  "scripts": {},
+  "scripts": {
+    "format": "nx format:write",
+    "lint:fix": "nx run-many --target=lint --all",
+    "start": "nx serve web-app"
+  },
   "private": true,
   "dependencies": {
     "react": "19.0.0",

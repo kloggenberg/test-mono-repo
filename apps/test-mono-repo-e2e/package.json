@@ -4,7 +4,7 @@
   "private": true,
   "nx": {
     "implicitDependencies": [
-      "@test-mono-repo/test-mono-repo"
+      "@test-mono-repo/web-app"
     ]
   }
 }

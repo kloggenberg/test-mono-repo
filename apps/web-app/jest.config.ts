@@ -1,5 +1,5 @@
 export default {
-  displayName: '@test-mono-repo/test-mono-repo',
+  displayName: '@test-mono-repo/web-app',
   preset: '../../jest.preset.js',
   transform: {
     '^(?!.*\\.(js|jsx|ts|tsx|css|json)$)': '@nx/react/plugins/jest',

@@ -7,7 +7,7 @@
       "path": "./apps/test-mono-repo-e2e"
     },
     {
-      "path": "./apps/test-mono-repo"
+      "path": "./apps/web-app"
     }
   ]
 }
