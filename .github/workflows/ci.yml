@@ -1,0 +1,58 @@
+# .github/workflows/ci.yml
+name: Nx Monorepo Lint & Format Checks
+
+on:
+  push:
+    branches:
+      - main
+      - master # Or your default branch name
+  pull_request:
+    types: [opened, synchronize, reopened] # Triggers for PR checks
+
+env:
+  NODE_VERSION: 20 # Use your project's Node.js version
+
+jobs:
+  lint-and-format:
+    name: Lint & Format Affected Files
+    runs-on: ubuntu-latest
+    timeout-minutes: 10 # Set a reasonable timeout for these checks
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Crucial for Nx affected commands to fetch full history
+
+      - name: Setup Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm' # Or 'yarn', 'pnpm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      # Optional: Connect to Nx Cloud for remote caching (speeds up subsequent runs)
+      # Uncomment after you've run 'npx nx connect' locally and set up the secret
+      - name: Connect to Nx Cloud
+        uses: nrwl/nx-cloud-setup@v1
+        with:
+          main-branch: main # Or your main branch name
+          nx-cloud-access-token: ${{ secrets.NX_CLOUD_ACCESS_TOKEN }}
+
+      - name: Derive Base and Head SHAs for Nx Affected
+        id: nx-set-shas
+        uses: nrwl/nx-set-shas@v4
+
+      - name: Run Affected Lint Checks
+        # This command will lint only the projects that have changed.
+        # If any linting errors are found, this step will fail, and thus the CI check will fail.
+        run: npx nx affected --target=lint --base=${{ steps.nx-set-shas.outputs.base }} --head=${{ steps.nx-set-shas.outputs.head }} --parallel
+
+      - name: Check Affected Formatting
+        # This command checks if affected files adhere to formatting rules (e.g., Prettier).
+        # It will fail if files are not correctly formatted.
+        # Note: 'format' target might not exist by default for all Nx setups.
+        # If it doesn't, you might need to configure it in project.json or rely on linting.
+        run: npx nx format:check --base=${{ steps.nx-set-shas.outputs.base }} --head=${{ steps.nx-set-shas.outputs.head }} --parallel

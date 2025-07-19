@@ -3,7 +3,9 @@
   "version": "0.0.0",
   "license": "MIT",
   "scripts": {
+    "clean": "nx reset",
     "format": "nx format:write",
+    "lint:check": "nx run-many --target=lint --all --no-fix",
     "lint:fix": "nx run-many --target=lint --all",
     "start": "nx serve web-app"
   },
