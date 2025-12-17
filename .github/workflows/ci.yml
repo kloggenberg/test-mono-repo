@@ -1,96 +1,52 @@
-# .github/workflows/ci.yml
-name: Nx Monorepo Lint & Format Checks
+name: Nx Monorepo CI
 
 on:
   push:
-    branches:
-      - main
-      - master # Or your default branch name
+    branches: [main, master]
   pull_request:
-    types: [opened, synchronize, reopened] # Triggers for PR checks
+    types: [opened, synchronize, reopened]
 
 env:
-  NODE_VERSION: 20 # Use your project's Node.js version
+  NODE_VERSION: 20
+  # Nx Cloud token is passed as an env variable so Nx handles it automatically
+  NX_CLOUD_ACCESS_TOKEN: ${{ secrets.NX_CLOUD_ACCESS_TOKEN }}
 
 jobs:
-  # -------------------------------------------------------------------------
-  # Job 1: Lint Check
-  # Checks affected files for ESLint errors and warnings.
-  # -------------------------------------------------------------------------
-  lint-check:
-    name: Lint Affected Files
+  main:
+    name: CI Checks
     runs-on: ubuntu-latest
-    timeout-minutes: 5 # Shorter timeout as it's a single check
-
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # Crucial for Nx affected commands to fetch full history
+          # Fetch all history so Nx can compare the current branch to the base branch
+          fetch-depth: 0
 
       - name: Setup Node.js ${{ env.NODE_VERSION }}
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm' # Or 'yarn', 'pnpm'
+          cache: 'npm'
 
       - name: Install Dependencies
         run: npm ci
-
-      # Optional: Connect to Nx Cloud for remote caching (speeds up subsequent runs)
-      # Uncomment after you've run 'npx nx connect' locally and set up the secret
-      - name: Connect to Nx Cloud
-        uses: nrwl/nx-cloud-setup@v1
-        with:
-          main-branch: main # Or your main branch name
-          nx-cloud-access-token: ${{ secrets.NX_CLOUD_ACCESS_TOKEN }}
 
       - name: Derive Base and Head SHAs for Nx Affected
         id: nx-set-shas
         uses: nrwl/nx-set-shas@v4
 
-      - name: Run Affected Lint Checks
-        # This command will lint only the projects that have changed.
-        # If any linting errors are found, this step will fail, and thus the CI job will fail.
-        run: npx nx affected --target=lint --base=${{ steps.nx-set-shas.outputs.base }} --head=${{ steps.nx-set-shas.outputs.head }} --parallel
+      # Check if files are formatted correctly (very fast)
+      - name: Check Formatting
+        run: npx nx format:check --base=${{ steps.nx-set-shas.outputs.base }} --head=${{ steps.nx-set-shas.outputs.head }}
 
-  # -------------------------------------------------------------------------
-  # Job 2: Format Check
-  # Checks affected files for formatting issues (e.g., using Prettier).
-  # -------------------------------------------------------------------------
-  format-check:
-    name: Format Affected Files
-    runs-on: ubuntu-latest
-    timeout-minutes: 5 # Shorter timeout for this check too
-    needs: lint-check # This job will only run if the 'lint-check' job succeeds
+      # Run Lint only on projects that changed
+      - name: Run Affected Lint
+        run: npx nx affected -t lint --parallel=3
 
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0 # Still needed for Nx affected commands
+      # Run Tests only on projects that changed (Optional - uncomment when ready)
+      # - name: Run Affected Test
+      #   run: npx nx affected -t test --parallel=3
 
-      - name: Setup Node.js ${{ env.NODE_VERSION }}
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm' # Or 'yarn', 'pnpm'
-
-      - name: Install Dependencies
-        run: npm ci
-
-      # Optional: Connect to Nx Cloud (important for consistent caching across jobs if using)
-      - name: Connect to Nx Cloud
-        uses: nrwl/nx-cloud-setup@v1
-        with:
-          main-branch: main
-          nx-cloud-access-token: ${{ secrets.NX_CLOUD_ACCESS_TOKEN }}
-
-      - name: Derive Base and Head SHAs for Nx Affected
-        id: nx-set-shas
-        uses: nrwl/nx-set-shas@v4
-
-      - name: Check Affected Formatting
-        # This command checks if affected files adhere to formatting rules (e.g., Prettier).
-        # It will fail if files are not correctly formatted.
-        run: npx nx format:check --base=${{ steps.nx-set-shas.outputs.base }} --head=${{ steps.nx-set-shas.outputs.head }} --parallel
+      # Run Build only on projects that changed (Optional - uncomment when ready)
+      # - name: Run Affected Build
+      #   run: npx nx affected -t build --parallel=3
